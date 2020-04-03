@@ -32,6 +32,10 @@ func run(w io.Writer, args []string) error {
 	return runProdCons(w, flags.Args(), *prodCnt, *consCnt)
 }
 
+type config struct {
+	prodCnt, consCnt uint
+}
+
 func runProdCons(w io.Writer, jobs []string, prodCnt, consCnt uint) error {
 	prodJobs, consJobs := make(chan string), make(chan string)
 

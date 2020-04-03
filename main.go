@@ -17,10 +17,6 @@ func main() {
 }
 
 func run(w io.Writer, args []string) error {
-	if len(args) < 2 {
-		return fmt.Errorf("no executable name is given")
-	}
-
 	var cnf config
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	flags.UintVar(&cnf.prodCnt, "prods", 1, "the number of producers")

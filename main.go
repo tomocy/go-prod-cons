@@ -20,27 +20,22 @@ func run(w io.Writer, args []string) error {
 		return fmt.Errorf("no executable name is given")
 	}
 
+	var cnf config
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
-	var (
-		prodCnt = flags.Uint("prods", 1, "the number of producers")
-		consCnt = flags.Uint("conss", 1, "the number of consumers")
-	)
+	flags.UintVar(&cnf.prodCnt, "prods", 1, "the number of producers")
+	flags.UintVar(&cnf.consCnt, "conss", 1, "the number of consumers")
 	if err := flags.Parse(args[1:]); err != nil {
 		return fmt.Errorf("failed to parse flags: %s", err)
 	}
 
-	return runProdCons(w, flags.Args(), *prodCnt, *consCnt)
+	return runProdCons(w, flags.Args(), cnf)
 }
 
-type config struct {
-	prodCnt, consCnt uint
-}
-
-func runProdCons(w io.Writer, jobs []string, prodCnt, consCnt uint) error {
+func runProdCons(w io.Writer, jobs []string, cnf config) error {
 	prodJobs, consJobs := make(chan string), make(chan string)
 
 	var prods sync.WaitGroup
-	for i := uint(0); i < prodCnt; i++ {
+	for i := uint(0); i < cnf.prodCnt; i++ {
 		prods.Add(1)
 		p := worker{
 			WaitGroup: &prods,
@@ -56,7 +51,7 @@ func runProdCons(w io.Writer, jobs []string, prodCnt, consCnt uint) error {
 	}
 
 	var conss sync.WaitGroup
-	for i := uint(0); i < consCnt; i++ {
+	for i := uint(0); i < cnf.consCnt; i++ {
 		conss.Add(1)
 		c := worker{
 			WaitGroup: &conss,
@@ -80,6 +75,10 @@ func runProdCons(w io.Writer, jobs []string, prodCnt, consCnt uint) error {
 	conss.Wait()
 
 	return nil
+}
+
+type config struct {
+	prodCnt, consCnt uint
 }
 
 type worker struct {

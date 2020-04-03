@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"sync"
+	"time"
 )
 
 func main() {
@@ -24,6 +25,8 @@ func run(w io.Writer, args []string) error {
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	flags.UintVar(&cnf.prodCnt, "prods", 1, "the number of producers")
 	flags.UintVar(&cnf.consCnt, "conss", 1, "the number of consumers")
+	flags.DurationVar(&cnf.prodDelay, "prod-delay", 0, "fixed delay till a producer work")
+	flags.DurationVar(&cnf.consDelay, "cons-delay", 0, "fixed delay till a consumer work")
 	if err := flags.Parse(args[1:]); err != nil {
 		return fmt.Errorf("failed to parse flags: %s", err)
 	}
@@ -42,6 +45,7 @@ func runProdCons(w io.Writer, jobs []string, cnf config) error {
 			queue:     prodJobs,
 			handle: func() func(string) {
 				return func(j string) {
+					time.Sleep(cnf.prodDelay)
 					consJobs <- j
 				}
 			}(),
@@ -57,6 +61,7 @@ func runProdCons(w io.Writer, jobs []string, cnf config) error {
 			WaitGroup: &conss,
 			queue:     consJobs,
 			handle: func(j string) {
+				time.Sleep(cnf.consDelay)
 				fmt.Fprintln(w, j)
 			},
 		}
@@ -78,7 +83,8 @@ func runProdCons(w io.Writer, jobs []string, cnf config) error {
 }
 
 type config struct {
-	prodCnt, consCnt uint
+	prodCnt, consCnt     uint
+	prodDelay, consDelay time.Duration
 }
 
 type worker struct {
